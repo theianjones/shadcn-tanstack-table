@@ -6,6 +6,9 @@ const columnHelper = createColumnHelper<{
   name: string
   age: number
   dateOfBirth: string
+  website: string
+  favoriteColor: string
+  isActive: boolean
 }>()
 
 const columns = [
@@ -18,12 +21,21 @@ const columns = [
     const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" })
     return (<p>{dateFormatter.format(new Date(cell.getValue()))}</p>)
   } }),
+  columnHelper.accessor("website", { header: "Website", cell: (cell) => {
+    return (<p>{cell.getValue()}</p>)
+  } }),
+  columnHelper.accessor("favoriteColor", { header: "Favorite Color", cell: (cell) => {
+    return (<p>{cell.getValue()}</p>)
+  } }),
+  columnHelper.accessor("isActive", { header: "Is Active", cell: (cell) => {
+    return (<p>{cell.getValue() ? "Yes" : "No"}</p>)
+  } }),
 ]
 
 const data = [
-  { name: "john", age: 20, dateOfBirth: "1990-01-01" },
-  { name: "Jane", age: 21, dateOfBirth: "1991-02-02" },
-  { name: "Doe", age: 22, dateOfBirth: "1992-03-03" },
+  { name: "john", age: 20, dateOfBirth: "1990-01-01", website: "https://www.google.com", favoriteColor: "blue", isActive: true },
+  { name: "Jane", age: 21, dateOfBirth: "1991-02-02", website: "https://www.google.com", favoriteColor: "green", isActive: false },
+  { name: "Doe", age: 22, dateOfBirth: "1992-03-03", website: "https://www.google.com", favoriteColor: "red", isActive: true },
 ]
 
 function App() {
@@ -49,7 +61,7 @@ function App() {
         {table.getRowModel().rows.map((row) => (
           <TableRow key={row.id}>
             {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
+              <TableCell key={cell.id} data-label={cell.column.columnDef.header}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </TableCell>
             ))}
