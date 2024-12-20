@@ -1,7 +1,9 @@
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table"
 
-import { flexRender, createColumnHelper, useReactTable, getCoreRowModel } from "@tanstack/react-table"
+import { flexRender, createColumnHelper, useReactTable, getCoreRowModel, VisibilityState } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { Switch } from "./components/ui/switch"
 const columnHelper = createColumnHelper<{
   name: string
   age: number
@@ -43,8 +45,27 @@ function App() {
     data: data,
     columns: columns,
     getCoreRowModel: getCoreRowModel(),
+    initialState: {
+      columnVisibility: {
+        website: false,
+      }
+    }
   })
   return (
+    <>
+    <div className="flex gap-4">
+      {table.getAllColumns().map((column) => (
+        <div key={column.id} className="flex flex-col items-center gap-1">
+          <label htmlFor={column.id}>{column.columnDef.header?.toString()}</label>
+          <Switch
+            id={column.id}
+            disabled={!column.getCanHide()} 
+            checked={column.getIsVisible()} 
+            onCheckedChange={(value) => column.toggleVisibility(value)} 
+          />
+        </div>
+      ))}
+    </div>
     <Table>
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
@@ -67,8 +88,9 @@ function App() {
             ))}
           </TableRow>
         ))}
-      </TableBody>
-    </Table>
+        </TableBody>
+      </Table>
+    </>
   )
 }
 export default App
