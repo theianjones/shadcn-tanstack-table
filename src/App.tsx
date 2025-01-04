@@ -1,9 +1,13 @@
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table"
-
-import { flexRender, createColumnHelper, useReactTable, getCoreRowModel, VisibilityState } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
-import { useState } from "react"
 import { Switch } from "./components/ui/switch"
+import { flexRender, createColumnHelper, useReactTable, getCoreRowModel } from "@tanstack/react-table"
+import { cn } from "@/lib/utils"
+import { useWindowVirtualizer } from "@tanstack/react-virtual"
+
+import { generateData } from "./data"
+
+const data = generateData()
+
 const columnHelper = createColumnHelper<{
   name: string
   age: number
@@ -17,7 +21,7 @@ const columns = [
   columnHelper.accessor("name", { header: "Name", cell: (cell) => <p className="capitalize">{cell.getValue()}</p> }),
   columnHelper.accessor("age", { header: "Age", cell: (cell) => {
     const age = cell.getValue()
-    return (<p className={cn(age > 20 ? "text-green-500" : "text-red-500")}>{age}</p>)
+    return (<p className={cn(typeof age === 'number' && age > 20 ? "text-green-500" : "text-red-500")}>{age}</p>)
   } }),
   columnHelper.accessor("dateOfBirth", { header: "Date of Birth", cell: (cell) => {
     const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" })
@@ -34,12 +38,6 @@ const columns = [
   } }),
 ]
 
-const data = [
-  { name: "john", age: 20, dateOfBirth: "1990-01-01", website: "https://www.google.com", favoriteColor: "blue", isActive: true },
-  { name: "Jane", age: 21, dateOfBirth: "1991-02-02", website: "https://www.google.com", favoriteColor: "green", isActive: false },
-  { name: "Doe", age: 22, dateOfBirth: "1992-03-03", website: "https://www.google.com", favoriteColor: "red", isActive: true },
-]
-
 function App() {
   const table = useReactTable({
     data: data,
@@ -51,6 +49,16 @@ function App() {
       }
     }
   })
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: table.getRowCount(),
+    estimateSize: () => 37,
+    overscan: 5,
+  })
+
+  const virtualRows = rowVirtualizer.getVirtualItems()
+  const tableRows = table.getRowModel().rows
+
   return (
     <>
     <div className="flex gap-4">
@@ -66,30 +74,35 @@ function App() {
         </div>
       ))}
     </div>
-    <Table>
+    <button onClick={() => rowVirtualizer.scrollToIndex(data.length - 1)}>Scroll to Bottom</button>
+    <Table aria-rowcount={data.length}>
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
+          <TableRow key={headerGroup.id} className="flex w-full">
             {headerGroup.headers.map((header) => (
-              <TableHead key={header.id}>
+              <TableHead key={header.id} className="w-full" style={{ width: `${header.getSize()}px` }}>
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </TableHead>
             ))}
           </TableRow>
         ))}
       </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id} data-label={cell.column.columnDef.header}>
+      <TableBody className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+        {virtualRows.map((virtualRow) => {
+          const row = tableRows[virtualRow.index]
+          return (
+            <TableRow key={virtualRow.key} className="absolute flex w-full" style={{ transform: `translateY(${virtualRow.start}px)` }}>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id} data-label={cell.column.columnDef.header} style={{ width: `${cell.column.getSize()}px` }}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </TableCell>
             ))}
-          </TableRow>
-        ))}
+            </TableRow>
+          )
+        })}
         </TableBody>
       </Table>
+      <button onClick={() => rowVirtualizer.scrollToIndex(0)}>Scroll to Top</button>
     </>
   )
 }
