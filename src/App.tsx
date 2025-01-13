@@ -1,58 +1,43 @@
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table"
 import { Switch } from "./components/ui/switch"
 import { flexRender, createColumnHelper, useReactTable, getCoreRowModel } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
 import { useWindowVirtualizer } from "@tanstack/react-virtual"
 
-import { generateData } from "./data"
+import { usePokemon, type Pokemon } from "./usePokemon"
+import { Suspense, useMemo } from "react"
 
-const data = generateData()
-
-const columnHelper = createColumnHelper<{
-  name: string
-  age: number
-  dateOfBirth: string
-  website: string
-  favoriteColor: string
-  isActive: boolean
-}>()
+const columnHelper = createColumnHelper<Pokemon>()
 
 const columns = [
-  columnHelper.accessor("name", { header: "Name", cell: (cell) => <p className="capitalize">{cell.getValue()}</p> }),
-  columnHelper.accessor("age", { header: "Age", cell: (cell) => {
-    const age = cell.getValue()
-    return (<p className={cn(typeof age === 'number' && age > 20 ? "text-green-500" : "text-red-500")}>{age}</p>)
-  } }),
-  columnHelper.accessor("dateOfBirth", { header: "Date of Birth", cell: (cell) => {
-    const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" })
-    return (<p>{dateFormatter.format(new Date(cell.getValue()))}</p>)
-  } }),
-  columnHelper.accessor("website", { header: "Website", cell: (cell) => {
-    return (<p>{cell.getValue()}</p>)
-  } }),
-  columnHelper.accessor("favoriteColor", { header: "Favorite Color", cell: (cell) => {
-    return (<p>{cell.getValue()}</p>)
-  } }),
-  columnHelper.accessor("isActive", { header: "Is Active", cell: (cell) => {
-    return (<p>{cell.getValue() ? "Yes" : "No"}</p>)
+  columnHelper.accessor("image", { header: "Image", cell: (cell) => <div className="flex h-full items-center"><img src={cell.getValue()} alt={cell.row.original.name} /></div> }),
+  columnHelper.accessor("name", { header: "Name", cell: (cell) => <div className="flex h-full items-center"><p className="capitalize">{cell.getValue()}</p></div> }),
+  columnHelper.accessor("height", { header: "Height", cell: (cell) => <div className="flex h-full items-center"><p>{cell.getValue()}</p></div> }),
+  columnHelper.accessor("weight", { header: "Weight", cell: (cell) => <div className="flex h-full items-center"><p>{cell.getValue()}</p></div> }),
+  columnHelper.accessor("types", { header: "Types", cell: (cell) => <div className="flex h-full items-center"><p>{cell.getValue().join(", ")}</p></div> }),
+  columnHelper.accessor("url", { header: "URL", cell: (cell) => {
+    return (<div className="flex h-full items-center"><p>{cell.getValue()}</p></div>)
   } }),
 ]
 
-function App() {
+const PokeTable = () => {
+  const data = usePokemon()
+
+  const results = useMemo(() => data.results, [data])
+
   const table = useReactTable({
-    data: data,
+    data: results,
     columns: columns,
     getCoreRowModel: getCoreRowModel(),
     initialState: {
       columnVisibility: {
-        website: false,
+        url: false,
       }
     }
   })
 
   const rowVirtualizer = useWindowVirtualizer({
     count: table.getRowCount(),
-    estimateSize: () => 37,
+    estimateSize: () => 100,
     overscan: 5,
   })
 
@@ -74,8 +59,8 @@ function App() {
         </div>
       ))}
     </div>
-    <button onClick={() => rowVirtualizer.scrollToIndex(data.length - 1)}>Scroll to Bottom</button>
-    <Table aria-rowcount={data.length}>
+    <button onClick={() => rowVirtualizer.scrollToIndex(results.length - 1)}>Scroll to Bottom</button>
+    <Table aria-rowcount={results.length}>
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id} className="flex w-full">
@@ -104,7 +89,17 @@ function App() {
       </Table>
       <button onClick={() => rowVirtualizer.scrollToIndex(0)}>Scroll to Top</button>
     </>
+    )
+}
+
+
+function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PokeTable />
+    </Suspense>
   )
+  
 }
 export default App
 
