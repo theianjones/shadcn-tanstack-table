@@ -1,4 +1,4 @@
-import {use} from 'react'
+import {use, useState} from 'react'
 
 type PokemonType = {
   name: string
@@ -22,9 +22,9 @@ type PokemonResponse = {
 }
 
 
-const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=30&offset=0"
+const apiUrl = "https://pokeapi.co/api/v2/pokemon"
 
-const pokemonPromise = fetch(apiUrl).then(res => res.json()).then(
+const fetchPokemon = (offset: number) => fetch(`${apiUrl}?limit=30&offset=${offset}`).then(res => res.json()).then(
 	async (data) => {
 		const pokemon = await Promise.all(data.results.map(async (pokemon: PokemonType) => {
 			const response = await fetch(pokemon.url)
@@ -45,8 +45,11 @@ const pokemonPromise = fetch(apiUrl).then(res => res.json()).then(
 	}
 ) as Promise<PokemonResponse>
 
-export const usePokemon = () => {
-	const data = use(pokemonPromise)
+const pokemonPromise = fetchPokemon(0)
 
-	return data
+export const usePokemon = () => {
+	const [promise, setPromise] = useState(pokemonPromise)
+	const data = use(promise)
+
+	return [data, (page: number) => setPromise(fetchPokemon(page * 30))] as const
 }
