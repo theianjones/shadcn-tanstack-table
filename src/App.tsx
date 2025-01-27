@@ -4,7 +4,7 @@ import { flexRender, createColumnHelper, useReactTable, getCoreRowModel } from "
 import { useWindowVirtualizer } from "@tanstack/react-virtual"
 
 import { usePokemon, type Pokemon } from "./usePokemon"
-import { Suspense, useMemo } from "react"
+import { Suspense, useMemo, useState } from "react"
 
 const columnHelper = createColumnHelper<Pokemon>()
 
@@ -20,7 +20,8 @@ const columns = [
 ]
 
 const PokeTable = () => {
-  const data = usePokemon()
+  const [page, setPage] = useState(0)
+  const [data, fetchPokemonPage] = usePokemon()
 
   const results = useMemo(() => data.results, [data])
 
@@ -47,6 +48,13 @@ const PokeTable = () => {
   return (
     <>
     <div className="flex gap-4">
+      <button onClick={
+        () => {
+          const newPage = page + 1
+          setPage(newPage)
+          fetchPokemonPage(newPage)
+        }
+      }>Fetch Page {page + 1}</button>
       {table.getAllColumns().map((column) => (
         <div key={column.id} className="flex flex-col items-center gap-1">
           <label htmlFor={column.id}>{column.columnDef.header?.toString()}</label>
@@ -76,9 +84,9 @@ const PokeTable = () => {
         {virtualRows.map((virtualRow) => {
           const row = tableRows[virtualRow.index]
           return (
-            <TableRow key={virtualRow.key} className="absolute flex w-full" style={{ transform: `translateY(${virtualRow.start}px)` }}>
+            <TableRow data-index={virtualRow.index} key={virtualRow.key} className="absolute flex w-full" style={{ transform: `translateY(${virtualRow.start}px)` }}>
               {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} data-label={cell.column.columnDef.header} style={{ width: `${cell.column.getSize()}px` }}>
+                <TableCell  key={cell.id} data-label={cell.column.columnDef.header} style={{ width: `${cell.column.getSize()}px` }}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </TableCell>
             ))}
